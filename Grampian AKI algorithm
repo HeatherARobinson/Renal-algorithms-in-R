@@ -52,13 +52,13 @@ a2<-a[duplicated(a[,1:2]),] #Remove any additional same day entries
 a<-a[!rownames(a) %in% rownames(a2) & !is.na(a$Creatinine),]#drop other values
 
 sorted <- a %>% 
-          arrange(PatientID,event.date) %>%
-          group_by(PatientID) %>%
+          arrange(studyid,dos) %>%
+          group_by(studyidD) %>%
           mutate(protagonist=row_number())
 a<-data.frame(sorted)
 attach(a)
 
-################################################################################
+################################################################################CHECKED
 # PART 2 - LOOP FOR AKI FLAGS TO COMPARE EACH TEST WITH PREVIOUS TESTS
 #CREATE A MARKER VARIABLE FOR EACH TIME AKI E-ALERT CRITERIA SATISFIED
 
@@ -82,7 +82,7 @@ weekvalue<-0
 Dvalue<-0
 protagonistdos<-0
 protagonistvalue<-0
-a <-a[order(PatientID, event.date),] 
+a <-a[order(studyid, dos),] 
 attach(a)
 
 ############################################################################################################# CHECKED
