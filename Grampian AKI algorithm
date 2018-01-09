@@ -143,9 +143,9 @@ mightyvalue[i]<-studyid[i]
 protagonistvalue<-ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE))
 
 AKIyear[i]<-ifelse((protagonistvalue[i]/yearmedian[i])>=1.5 & !is.na(yearmedian[i]) & is.na(monthmedian[i]),1,0)
-AKImonth[i]<-ifelse((protagonistvalue[i]/monthmedian[i])>=1.5 & !is.na(monthmedian[i]),1,0)
-AKIweek[i]<-ifelse((protagonistvalue[i]/weekmin[i])>=1.5 & !is.na(weekmin[i]) & (protagonistvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
-AKIday[i]<-ifelse((protagonistvalue[i]/daymin[i])>=1.5 & !is.na(daymin[i]) & (mightyvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
+AKImonth[i]<-ifelse((protagonistvalue[i]/monthmedian[i])>=1.5 & !is.na(monthmedian[i]) & is.na(weekmin[i]),1,0)
+AKIweek[i]<-ifelse((protagonistvalue[i]/weekmin[i])>=1.5 & !is.na(weekmin[i]) & is.na(daymin),1,0)
+AKIday[i]<-ifelse((protagonistvalue[i]/daymin[i])>=1.5 & !is.na(daymin[i]),1,0)
 
 #END OF LOOP
 close(pb)
