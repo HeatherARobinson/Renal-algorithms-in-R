@@ -179,13 +179,30 @@ a$AKIcounter[x]<-ifelse(PatientID[x]==PatientID[x-1],
 a$AKIcounter[x-1]+a$add[x],1)}
 
 #FLAG THE FIRST AKI OF THE INDEX YEAR
-tabx<-a[a$yr03==1,c("studyid","AKIcounter")]
+tabx<-a[a$yr03==1,c("studyid","dos","AKIcounter")]
 first<-tabx %>% 
 group_by_(studyid) %>%
 summarize(firstIndexAKI=min(AKIcounter)) %>%
 as.data.frame
-a<-merge(a,firstH,all.x=TRUE)
-a$firstAKI<-ifelse(a$AKIcounter==a$firstIndexAKI,1,0)
+a<-merge(a,first,all.x=TRUE)
+
+taby<-a[a$firstIndexAKI==a$AKICounter,c("studyid","dos")]
+second<-taby %>% 
+group_by_(studyid) %>%
+summarize(firstAKIdos=min(dos)) %>%
+as.data.frame
+a<-merge(a,second,all.x=TRUE)
+
+a$firstAKI<-ifelse(a$dos==a$firstAKIdos,1,0)
+for (i in 1:length(unique(studyid))){
+a$markerfirstAKIyear<-min() " first AKI in 2003 first test that meets the 91-365d criteria - can be more than 1 criterion"
+a$markerfirstAKIweek " first AKI in 2003 first test that meets the 0-7d criteria - can be more than 1 criterion"
+a$markerfirstAKIday " first AKI in 2003 first test that meets the 0-2d criteria - can be more than 1 criterion"
+a$markerfirstAKImonth " first AKI in 2003 first test that meets the 8-90d criteria - can be more than 1 criterion"
+
+
+
+
 
 ###########################################################################AKI FLAGGING AND STAGING 
 a$AKIStage<-ifelse(RV_ratio<1.5 & D>26,1,0))
