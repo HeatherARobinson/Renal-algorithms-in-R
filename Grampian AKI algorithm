@@ -6,12 +6,13 @@
 #criterion results in different categorisations.
 #Lab reported MDRD eGFR is used to define baseline, modules are also included to derive this from MDRD or CKD-EPI
 #This code requires pre-installation of the following R packages:
-#lubridate,dplyr,tarifx,cltk
+#lubridate,dplyr,tarifx,cltk, data.table
 
 library(lubridate)
 library(dplyr)
 library (taRifx)#Essential for progress bar only
 library(tcltk)#Essential for progress bar only
+library(data.table)
 
 ############################################################################################
 #PART 0 - INITIAL VARIABLE CHECKLIST
@@ -141,55 +142,48 @@ mightyvalue<-NA
 mightyvalue[i]<-studyid[i]
 protagonistvalue<-ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE))
 
-AKIyear[i]<-ifelse((protagonistvalue[i]/yearmedian[i])>=1.5 & !is.na(yearmedian[i]) & (protagonistvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
-AKImonth[i]<-ifelse((protagonistvalue[i]/monthmedian[i])>=1.5 & !is.na(monthmedian[i]) & (protagonistvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
+AKIyear[i]<-ifelse((protagonistvalue[i]/yearmedian[i])>=1.5 & !is.na(yearmedian[i]) & is.na(monthmedian[i]),1,0)
+AKImonth[i]<-ifelse((protagonistvalue[i]/monthmedian[i])>=1.5 & !is.na(monthmedian[i]),1,0)
 AKIweek[i]<-ifelse((protagonistvalue[i]/weekmin[i])>=1.5 & !is.na(weekmin[i]) & (protagonistvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
 AKIday[i]<-ifelse((protagonistvalue[i]/daymin[i])>=1.5 & !is.na(daymin[i]) & (mightyvalue[i]>(3*RV_ratio[i])|RV_ratio[i]>=1.5),1,0)
 
 #END OF LOOP
 close(pb)
 ##########################################################################################################CHECK DEFINITIONS HERE- AND IN NHS VERSION AND PERMIT VERSION
-#GROUP EPISODES
+#Split into AKI episodes
+#DIVIDE AKI INTO 90 DAY SESSIONS
 
+#DIVIDE AKI INTO 90 DAY SESSIONS
+#Assign an akicounter value of 1 to all AKI blood tests
+a<-a[AKIweek==1|AKIyear==1,]
+a<-a[order(studyid,event.date),]
+a$AKIcounter<-1
+a$studyid<-as.factor(a$studyid)
+attach(a)
 
+a<-as.data.table(a)
+a[, lag.date := c(NA, dos[-.N]), by = studyid])
+a$add<-ifelse(as.numeric(dos)-a$lag.date>90,1,0)
+attach(a)
 
+#Add +1 to aki counter if the date of the sample was >90 days after the first sample with an akicounter value of 1
 
+a$add<-ifelse(is.na(a$add),0,a$add)
+a$AKIcounter==1
+for(x in 2:length(a$AKIcounter)){
+a$AKIcounter[x]<-ifelse(PatientID[x]==PatientID[x-1],
+a$AKIcounter[x-1]+a$add[x],1)}
 
-
-
-
-
-
-
-
-
-#DEFINE INDEX WINDOW
-
-
-
-
-
-
-
-
-
-
-#IDENTIFY FIRST EPISODE OF INDEX YEAR
-
-
-
-
-
-#AKI FLAGGING AND STAGING OF TESTS
-a$AKIStage<-0
-a$AKIStage<-ifelse(RV_ratio<1.5 & D>26,1,a$AKIStage))
+###########################################################################AKI FLAGGING AND STAGING 
+a$AKIStage<-ifelse(RV_ratio<1.5 & D>26,1,0))
 a$AKIStage<-ifelse(RV_ratio>=1.5 & Creatinine>354,3,a$AKIStage))
 a$AKIStage<-ifelse(RV_ratio>=1.5 & stcreat<354 & RV_ratio>=3,3,a$AKIStage)
 a$AKIStage<-ifelse(RV_ratio>=1.5 & stcreat<354 & RV_ratio>=2&RV_ratio<3,2,a$AKIStage)
 a$AKIStage<-ifelse(RV_ratio>=1.5 & stcreat<354 & RV_ratio>=1.5&RV_ratio<2,1,a$AKIStage)
 
-############################################### ATTACH FLAGS AND STAGING TO ORIGINAL TABLE
+###########################################################################ATTACH TO ORIGINAL TABLE
 a<-a[,c("PatientID","event.date","AKIStage","AKIflag")]
-b<-load
+b<--read.table("tests.csv",sep=",",header=TRUE)
 b<-merge(b,a,all.x=TRUE)
 b$AKIStage<-ifelse(is.na(b$AKIStage),0,b$AKIStage)
+save(b,file="outputname.rda")
