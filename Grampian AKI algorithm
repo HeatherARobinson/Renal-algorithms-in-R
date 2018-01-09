@@ -79,6 +79,7 @@ sorted <- a %>%
           mutate(protagonist=row_number())
 a<-data.frame(sorted)
 attach(a)
+max(protagonist) #number of loop iterations needed.
 
 ################################################################################CHECKED
 # PART 2 - LOOP THROUGH AKI FLAGS TO COMPARE EACH TEST WITH PREVIOUS TESTS
@@ -89,7 +90,6 @@ AKImonth<-0
 AKIyear<-0
 AKIweek<-0
 AKIday<-0
-max(protagonist) #number of loop iterations needed.
 
 #LOOP for x values, where x = the highest number of tests a patient had in the index year (max(protagonist)) 
 mightydate<-NA
@@ -145,11 +145,15 @@ protagonistvalue<-ave(mightyvalue,studyid,FUN = function(x) max(x, na.rm = TRUE)
 AKIyear[i]<-ifelse((protagonistvalue[i]/yearmedian[i])>=1.5 & !is.na(yearmedian[i]) & is.na(monthmedian[i]),1,0)
 AKImonth[i]<-ifelse((protagonistvalue[i]/monthmedian[i])>=1.5 & !is.na(monthmedian[i]) & is.na(weekmin[i]),1,0)
 AKIweek[i]<-ifelse((protagonistvalue[i]/weekmin[i])>=1.5 & !is.na(weekmin[i]) & is.na(daymin),1,0)
-AKIday[i]<-ifelse((protagonistvalue[i]/daymin[i])>=1.5 & !is.na(daymin[i]),1,0)
+AKIday[i]<-ifelse((protagonistvalue[i]/daymin[i])>=1.5 & !is.na(daymin[i]),1,0)}
 
-#END OF LOOP
+#year AKI can ONLY be tested if there is not a monthmedian already available for the sample, thus monthmedian sample needs to be missing before looking back further
+*END OF LOOP, HAVE NOW FLAGGED ALL TESTS MEETING EACH TYPE OF AKI CONDITION
 close(pb)
 ##########################################################################################################CHECK DEFINITIONS HERE- AND IN NHS VERSION AND PERMIT VERSION
+
+#PART 3 - PROCESSING OF AKI FLAGS
+
 #Split into AKI episodes
 #DIVIDE AKI INTO 90 DAY SESSIONS
 
@@ -173,6 +177,15 @@ a$AKIcounter==1
 for(x in 2:length(a$AKIcounter)){
 a$AKIcounter[x]<-ifelse(PatientID[x]==PatientID[x-1],
 a$AKIcounter[x-1]+a$add[x],1)}
+
+#FLAG THE FIRST AKI OF THE INDEX YEAR
+tabx<-a[a$yr03==1,c("studyid","AKIcounter")]
+first<-tabx %>% 
+group_by_(studyid) %>%
+summarize(firstIndexAKI=min(AKIcounter)) %>%
+as.data.frame
+a<-merge(a,firstH,all.x=TRUE)
+a$firstAKI<-ifelse(a$AKIcounter==a$firstIndexAKI,1,0)
 
 ###########################################################################AKI FLAGGING AND STAGING 
 a$AKIStage<-ifelse(RV_ratio<1.5 & D>26,1,0))
